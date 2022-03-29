@@ -72,7 +72,7 @@ function CoverGenerator({ data }) {
                   display="inline"
                 >
                   {track.artists.map((artist, i) => (
-                    <span key={i}>{artist.name}</span>
+                    i > 0 ? <span key={i}>, {artist.name}</span> : <span key={i}>{artist.name}</span>
                   ))}
                 </Text>
               </Box>
@@ -217,6 +217,7 @@ function SliderMarkExample(props) {
       min={props.min}
       max={props.max}
       colorScheme={props.timebarColor}
+      defaultValue={props.sliderValue}
     >
       <SliderTrack>
         <SliderFilledTrack />
