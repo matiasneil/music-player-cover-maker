@@ -1,0 +1,29 @@
+@font-face {
+    font-family: 'GothamLight';
+    src: url('../fonts/GothamLight.ttf');    
+}
+
+@font-face {
+    font-family: 'GothamMedium';
+    src: url('../fonts/GothamMedium.ttf');    
+}
+
+@font-face {
+    font-family: 'GothamBold';
+    src: url('../fonts/GothamBold.ttf');    
+}
+
+.artist {
+    font-family: 'GothamMedium';
+    font-size: 30px;
+}
+
+.song {
+    font-family: 'GothamBold';
+    font-size: 30px;
+}
+
+.trackTime {
+    font-family: 'GothamBold';
+    font-size: 15px;
+}
