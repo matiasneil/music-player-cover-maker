@@ -1,8 +1,9 @@
-import React from "react";
 import styles from "../assets/css/cover-generator.module.css";
-import html2canvas from "html2canvas";
-import { colorSchemes } from "../lib/consts.js";
+import { colorSchemes, bgColors } from "../lib/consts.js";
 import { getAccessToken } from "../lib/spotify.js";
+import { TwitterPicker } from "react-color";
+import html2canvas from "html2canvas";
+import React from "react";
 import {
   Box,
   Button,
@@ -10,7 +11,7 @@ import {
   Image,
   Spacer,
   Text,
-  VStack,
+  Input,
   Stack,
   RadioGroup,
   Radio,
@@ -20,7 +21,6 @@ import {
   SliderThumb,
   Checkbox,
   Select,
-  HStack,
 } from "@chakra-ui/react";
 
 function CoverGenerator({ data }) {
@@ -30,9 +30,45 @@ function CoverGenerator({ data }) {
   const [sliderValue, setSliderValue] = React.useState(0);
   const [showAlbumCover, setShowAlbumCover] = React.useState(true);
   const [timebarColor, setTimebarColor] = React.useState("");
+  const [bgColor, setBgColor] = React.useState("#C5DEDD");
+  const [timeInputValid, setTimeInputValid] = React.useState(true);
 
   let trackLengthInSeconds = Math.floor(track.duration_ms / 1000);
+  let defaultSliderValue = Math.floor(trackLengthInSeconds / 2);
 
+  React.useEffect(() => {
+    setSliderValue(defaultSliderValue);
+  }, [trackLengthInSeconds]);
+
+  const setTimeFromInput = (val) => {
+    let valid = true;
+    let splittedVal;
+    if (val.includes(":")) {
+      splittedVal = val.split(":").map(Number);
+      if (splittedVal[1] > 59) {
+        valid = false;
+      }
+    } else {
+      valid = false;
+    }
+
+    let totalSeconds;
+    if (valid) {
+      totalSeconds = splittedVal[0] * 60 + splittedVal[1];
+      if (totalSeconds > trackLengthInSeconds) {
+        valid = false;
+      }
+    }
+
+    setTimeInputValid(valid);
+
+    if (valid) {
+      setSliderValue(totalSeconds);
+    } else {
+      setSliderValue(0);
+    }
+  };
+  
   return (
     <Flex align="center" direction="column" justify="center">
       <Flex
@@ -40,7 +76,7 @@ function CoverGenerator({ data }) {
         h="500px"
         justify="center"
         id="capture"
-        bgImage="/img/bg/1.jpg"
+        bgColor={bgColor}
         transform={{
           base: "scale(0.25)",
           sm: "scale(0.3)",
@@ -71,9 +107,13 @@ function CoverGenerator({ data }) {
                   color={controlsTheme}
                   display="inline"
                 >
-                  {track.artists.map((artist, i) => (
-                    i > 0 ? <span key={i}>, {artist.name}</span> : <span key={i}>{artist.name}</span>
-                  ))}
+                  {track.artists.map((artist, i) =>
+                    i > 0 ? (
+                      <span key={i}>, {artist.name}</span>
+                    ) : (
+                      <span key={i}>{artist.name}</span>
+                    )
+                  )}
                 </Text>
               </Box>
               <Spacer />
@@ -82,6 +122,7 @@ function CoverGenerator({ data }) {
                 <SliderMarkExample
                   sliderValue={sliderValue}
                   setSliderValue={setSliderValue}
+                  defaultValue={defaultSliderValue}
                   min={0}
                   max={trackLengthInSeconds}
                   timebarColor={timebarColor}
@@ -108,44 +149,80 @@ function CoverGenerator({ data }) {
         </Flex>
       </Flex>
       <Box width={{ base: "90%", lg: "990px" }}>
-        <Flex pb="15px">
-          <Text pr="10px">Controls:</Text>
-          <RadioGroup onChange={setControlsTheme} value={controlsTheme}>
-            <Stack direction="row">
-              <Radio value="white">White</Radio>
-              <Radio value="black">Black</Radio>
-            </Stack>
-          </RadioGroup>
-          <Spacer />
-          <Checkbox
-            isChecked={showAlbumCover}
-            onChange={(e) => setShowAlbumCover(e.target.checked)}
+        <Flex justify="center" direction={{ base: "column", md: "row" }}>
+          <Flex
+            width={{ base: "100%", md: "220px" }}
+            pb={{ base: "15px", sm: "0px" }}
+            justify="center"
           >
-            Show album cover
-          </Checkbox>
+            <TwitterPicker
+              color={bgColor}
+              colors={bgColors}
+              onChange={(color, event) => setBgColor(color.hex)}
+              triangle="hide"
+              width="100%"
+            ></TwitterPicker>
+          </Flex>
+          <Flex
+            direction="column"
+            pl="15px"
+            width={{ base: "100%", md: "40%" }}
+          >
+            <Flex dir="row" align="center">
+              <Text pr="10px">Time:</Text>
+              <Spacer />
+              <Input
+                size="sm"
+                isInvalid={!timeInputValid}
+                w="150px"
+                onBlur={(event) => setTimeFromInput(event.target.value)}
+                id="timeInput"
+                defaultValue={getFormattedTime(sliderValue)}
+              ></Input>
+            </Flex>
+
+            <Flex dir="row" align="center">
+              <Text w="160px">Timebar color: </Text>
+              <Spacer />
+              <Select
+                size="sm"
+                placeholder="Select..."
+                onChange={(e) => {
+                  setTimebarColor(e.target.value);
+                }}
+                w="150px"
+              >
+                {colorSchemes.map((scheme, i) => {
+                  return (
+                    <option key={i} value={scheme}>
+                      {scheme}
+                    </option>
+                  );
+                })}
+              </Select>
+            </Flex>
+            <Flex dir="row">
+              <Text pr="10px">Controls:</Text>
+              <RadioGroup onChange={setControlsTheme} value={controlsTheme}>
+                <Stack direction="row">
+                  <Radio value="white">White</Radio>
+                  <Radio value="black">Black</Radio>
+                </Stack>
+              </RadioGroup>
+            </Flex>
+            <Checkbox
+              isChecked={showAlbumCover}
+              onChange={(e) => setShowAlbumCover(e.target.checked)}
+            >
+              Show album cover
+            </Checkbox>
+          </Flex>
         </Flex>
 
-        <Flex align="center" pb="15px">
-          <Text w="160px">Timebar color: </Text>
-          <Select
-            placeholder="Select..."
-            onChange={(e) => {
-              console.log(e.target.value);
-              setTimebarColor(e.target.value);
-            }}
-          >
-            {colorSchemes.map((scheme, i) => {
-              return (
-                <option key={i} value={scheme}>
-                  {scheme}
-                </option>
-              );
-            })}
-          </Select>
-        </Flex>
+        <Flex align="center" pb="15px"></Flex>
 
         <Flex justify="center">
-          <Button onClick={saveImage}>Save image</Button>
+          <Button onClick={saveImage}>Download</Button>
         </Flex>
       </Box>
     </Flex>
@@ -156,7 +233,6 @@ export const getServerSideProps = async (context) => {
   let trackId = context.query.trackId;
 
   const { access_token } = await getAccessToken();
-  console.log(access_token);
 
   const spotifyResponse = await fetch(
     `https://api.spotify.com/v1/tracks/${trackId}`,
@@ -217,7 +293,8 @@ function SliderMarkExample(props) {
       min={props.min}
       max={props.max}
       colorScheme={props.timebarColor}
-      defaultValue={props.sliderValue}
+      defaultValue={props.defaultValue}
+      value={props.sliderValue}
     >
       <SliderTrack>
         <SliderFilledTrack />
@@ -238,6 +315,10 @@ function getFormattedTime(time) {
 
 function str_pad_left(string, pad, length) {
   return (new Array(length + 1).join(pad) + string).slice(-length);
+}
+
+function handleChange(color, event) {
+  setBgColor(color);
 }
 
 export default CoverGenerator;
